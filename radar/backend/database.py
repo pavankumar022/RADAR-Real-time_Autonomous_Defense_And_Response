@@ -285,7 +285,12 @@ async def get_settings() -> dict:
         row = await db.execute("SELECT value FROM settings WHERE key='system'")
         result = await row.fetchone()
         if result:
-            return json.loads(result["value"])
+            val = json.loads(result["value"])
+            if "monitored_ips" not in val:
+                val["monitored_ips"] = ["10.0.1.55", "10.0.4.112", "192.168.1.100"]
+            if "synthetic_delay" not in val:
+                val["synthetic_delay"] = 3.0
+            return val
     from backend.models import SystemSettings
     return SystemSettings().model_dump()
 

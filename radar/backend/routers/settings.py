@@ -48,6 +48,14 @@ async def update_settings(body: dict):
         # Apply input_mode change
         if "input_mode" in body:
             app_state.input_mode = body["input_mode"]
+            if app_state.input_mode == "synthetic":
+                app_state.feed_state = "SYNTHETIC_FEED"
+            else:
+                app_state.feed_state = "LIVE_FEED_ACTIVE"
+
+        # Apply synthetic_delay change
+        if "synthetic_delay" in body:
+            app_state.synthetic_delay = float(body["synthetic_delay"])
 
         # Broadcast updated status
         await manager.broadcast({
@@ -114,6 +122,8 @@ def _default_settings() -> dict:
             "lateral_movement": 42,
         },
         "ip_whitelist": ["192.168.1.1", "10.0.0.55", "172.16.254.1"],
+        "monitored_ips": ["10.0.1.55", "10.0.4.112", "192.168.1.100"],
+        "synthetic_delay": 3.0,
         "input_mode": "synthetic",
         "ai_provider": "gemini",
         "monitoring_active": True,

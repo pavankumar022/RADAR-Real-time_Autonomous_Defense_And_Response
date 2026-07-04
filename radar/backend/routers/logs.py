@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import ndjson
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, Request
 from fastapi.responses import JSONResponse
 
 from backend import database as db
@@ -157,6 +157,16 @@ async def upload_logs(file: UploadFile = File(...)):
     app_state.input_mode = "upload"
     app_state.feed_state = "LIVE_FEED_ACTIVE"
 
+    from backend.services.ws_manager import manager
+    await manager.broadcast({
+        "type": "status",
+        "payload": {
+            "feed_state": app_state.feed_state,
+            "monitoring_active": app_state.monitoring_active,
+            "input_mode": app_state.input_mode,
+        },
+    })
+
     # Process in background — enrich + store + broadcast
     async def process():
         for raw in raw_events:
@@ -173,27 +183,54 @@ async def upload_logs(file: UploadFile = File(...)):
 # ─── Filebeat-compatible Stream ───────────────────────────────────────────────
 
 @router.post("/stream")
-async def stream_logs(payload: dict):
+async def stream_logs(request: Request):
     """
     Filebeat HTTP output compatible endpoint.
     Accepts a batch or single event and routes through the same pipeline.
     """
-    # Filebeat sends {"events": [...]} or a single event dict
-    events_raw = payload.get("events", [payload])
+    try:
+        payload = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {e}")
+
+    if isinstance(payload, list):
+        events_raw = payload
+    elif isinstance(payload, dict):
+        events_raw = payload.get("events") or [payload]
+    else:
+        events_raw = [payload]
+
+    if not events_raw:
+        return {"status": "ignored", "count": 0}
 
     app_state.input_mode = "stream"
     app_state.feed_state = "LIVE_FEED_ACTIVE"
 
+    from backend.services.ws_manager import manager
+    await manager.broadcast({
+        "type": "status",
+        "payload": {
+            "feed_state": app_state.feed_state,
+            "monitoring_active": app_state.monitoring_active,
+            "input_mode": app_state.input_mode,
+        },
+    })
+
     for raw in events_raw:
-        if isinstance(raw, dict):
-            # Filebeat wraps in {"message": ..., "@timestamp": ...}
-            inner = raw.get("message", raw)
-            if isinstance(inner, str):
-                try:
-                    inner = json.loads(inner)
-                except Exception:
-                    inner = {"message": inner}
-            event = _normalize_uploaded_event(inner)
-            asyncio.create_task(_enrich_and_store(event))
+        # Avoid processing non-dict items if they are present in a bad batch
+        if not isinstance(raw, dict):
+            continue
+        # Filebeat wraps in {"message": ..., "@timestamp": ...} or similar
+        inner = raw.get("message") or raw
+        if isinstance(inner, str):
+            try:
+                inner = json.loads(inner)
+            except Exception:
+                inner = {"message": inner}
+        elif not isinstance(inner, dict):
+            inner = {"message": str(inner)}
+
+        event = _normalize_uploaded_event(inner)
+        asyncio.create_task(_enrich_and_store(event))
 
     return {"status": "accepted", "count": len(events_raw)}

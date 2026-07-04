@@ -10,6 +10,8 @@ import { useStore } from '../lib/store'
 const DEFAULT_SETTINGS = {
   detection_thresholds: { general_sensitivity: 74, anomaly_detection: 88, lateral_movement: 42 },
   ip_whitelist: ['192.168.1.1', '10.0.0.55', '172.16.254.1'],
+  monitored_ips: ['10.0.1.55', '10.0.4.112', '192.168.1.100'],
+  synthetic_delay: 3.0,
   input_mode: 'synthetic',
   ai_provider: 'gemini',
   monitoring_active: true,
@@ -48,6 +50,7 @@ export default function Settings() {
   const [saved, setSaved] = useState(false)
   const [offline, setOffline] = useState(false)
   const [newIp, setNewIp] = useState('')
+  const [newMonitoredIp, setNewMonitoredIp] = useState('')
 
   useEffect(() => {
     api.settings.get()
@@ -92,6 +95,17 @@ export default function Settings() {
 
   const removeIp = (ip) => {
     set('ip_whitelist', settings.ip_whitelist.filter(x => x !== ip))
+  }
+
+  const addMonitoredIp = () => {
+    const ip = newMonitoredIp.trim()
+    if (!ip || settings.monitored_ips.includes(ip)) return
+    set('monitored_ips', [...settings.monitored_ips, ip])
+    setNewMonitoredIp('')
+  }
+
+  const removeMonitoredIp = (ip) => {
+    set('monitored_ips', settings.monitored_ips.filter(x => x !== ip))
   }
 
   return (
@@ -167,6 +181,48 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Monitored Targets */}
+        <div className="card p-5 space-y-4">
+          <div>
+            <h2 className="font-semibold text-on-surface">Monitored Target IPs</h2>
+            <p className="text-on-surface-variant text-sm">Target nodes currently under active surveillance and log collection.</p>
+          </div>
+          <div className="space-y-2">
+            {(settings.monitored_ips || []).map(ip => (
+              <div
+                key={ip}
+                className="flex items-center justify-between px-3 py-2.5 rounded border border-outline/20 bg-surface-low text-xs text-on-surface animate-fade-in"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-secondary pulse-dot" />
+                  <span className="mono-data font-bold">{ip}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="mono-label text-secondary text-[10px]">MONITORING ACTIVE</span>
+                  <button
+                    onClick={() => removeMonitoredIp(ip)}
+                    className="px-2 py-1 rounded bg-critical/15 text-critical border border-critical/30 hover:bg-critical/25 text-[10px] font-mono transition-all"
+                  >
+                    DISCONNECT
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Enter Target IP (e.g. 10.0.1.99)"
+              value={newMonitoredIp}
+              onChange={e => setNewMonitoredIp(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addMonitoredIp()}
+              className="flex-1 bg-surface-lowest border border-outline/30 rounded px-3 py-2 mono-data text-sm text-on-surface placeholder-outline focus:outline-none focus:border-primary/50"
+              id="ip-monitored-input"
+            />
+            <button onClick={addMonitoredIp} className="btn-primary text-xs" id="connect-ip-btn">+ CONNECT IP</button>
+          </div>
+        </div>
+
         {/* Input Mode */}
         <div className="card p-5 space-y-4">
           <div>
@@ -194,6 +250,28 @@ export default function Settings() {
               </button>
             ))}
           </div>
+
+          {settings.input_mode === 'synthetic' && (
+            <div className="space-y-2 pt-4 border-t border-primary/10 fade-in">
+              <div className="flex items-center justify-between">
+                <p className="mono-label text-on-surface-variant">Synthetic Pacing Delay</p>
+                <span className="mono-data text-on-surface font-bold text-sm">{settings.synthetic_delay}s</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={10.0}
+                step={0.5}
+                value={settings.synthetic_delay ?? 3.0}
+                onChange={e => set('synthetic_delay', parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-surface-high rounded-full appearance-none cursor-pointer"
+                style={{ accentColor: '#3b9eff' }}
+              />
+              <p className="text-[11px] text-on-surface-variant">
+                Controls the time gap between simulated threat events. A larger delay (e.g. 3.0s) allows stable reading and analysis of incoming alerts.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* AI Provider */}

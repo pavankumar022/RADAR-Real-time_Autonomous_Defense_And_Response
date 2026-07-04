@@ -16,6 +16,7 @@ class AppState:
     input_mode: str = "synthetic"
     start_time: float = field(default_factory=time.monotonic)
     generator_task: Optional[asyncio.Task] = field(default=None, repr=False)
+    synthetic_delay: float = 3.0
 
 
 app_state = AppState()

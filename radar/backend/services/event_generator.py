@@ -197,15 +197,15 @@ async def _enrich_event(event: dict) -> dict:
 # ─── Public Generator ─────────────────────────────────────────────────────────
 
 async def generate_events(
-    rate_per_sec: float = 10.0,
     on_event: Callable[[dict], Awaitable[None]] | None = None,
 ) -> AsyncIterator[dict]:
     """
-    Async generator yielding enriched events at ~rate_per_sec events/sec.
+    Async generator yielding enriched events.
+    Uses app_state.synthetic_delay for pacing.
     Natural variance: interval jitters ±30% to avoid uniform/fake feel.
     If on_event callback is provided, it's called after each event is yielded.
     """
-    base_interval = 1.0 / max(rate_per_sec, 0.1)
+    from backend.state import app_state
     while True:
         event = _make_event()
         event = await _enrich_event(event)
@@ -218,9 +218,10 @@ async def generate_events(
         if on_event:
             await on_event(event)
 
-        # Jitter: ±30% of base interval
+        # Jitter: ±30% of app_state.synthetic_delay
+        delay = getattr(app_state, "synthetic_delay", 3.0)
         jitter = random.uniform(0.7, 1.3)
-        await asyncio.sleep(base_interval * jitter)
+        await asyncio.sleep(delay * jitter)
 
 
 async def generate_seed_events(count: int = 5000) -> list[dict]:

@@ -62,6 +62,14 @@ async def on_startup():
     # Seed events if archive is empty
     await _seed_if_empty()
 
+    # Load initial settings
+    try:
+        current_settings = await db.get_settings()
+        app_state.synthetic_delay = float(current_settings.get("synthetic_delay", 3.0))
+    except Exception as e:
+        log.warning(f"Failed to load synthetic delay settings on startup: {e}")
+        app_state.synthetic_delay = 3.0
+
     # Start synthetic event generator
     app_state.feed_state = "LOADING_SYNTHETIC"
     app_state.generator_task = asyncio.create_task(start_event_generator())
@@ -93,7 +101,7 @@ async def start_event_generator():
     app_state.feed_state = "SYNTHETIC_FEED"
 
     try:
-        async for event in generate_events(rate_per_sec=settings.ws_emission_rate):
+        async for event in generate_events():
             if not app_state.monitoring_active:
                 # Monitoring paused — wait until re-enabled
                 app_state.feed_state = "SYSTEM_STANDBY"
