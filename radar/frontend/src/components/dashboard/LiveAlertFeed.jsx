@@ -1,8 +1,4 @@
-/**
- * Live Alert Feed — real-time scrolling list of security events
- * Driven entirely by WebSocket messages from the global store.
- * Auto-scrolls to top on new alerts, keeps last 200.
- */
+import React from 'react'
 import { useStore } from '../../lib/store'
 import { SeverityChip, TechniqueBadge } from '../ui'
 import { useNavigate } from 'react-router-dom'
@@ -15,7 +11,7 @@ function formatTime(ts) {
   }
 }
 
-function AlertRow({ event }) {
+const AlertRow = React.memo(({ event }) => {
   const navigate = useNavigate()
   const rowClass = {
     critical: 'alert-row-critical',
@@ -51,11 +47,16 @@ function AlertRow({ event }) {
       </div>
     </div>
   )
-}
+})
+
+AlertRow.displayName = 'AlertRow'
 
 export default function LiveAlertFeed() {
   const { state } = useStore()
   const { alerts, stats } = state
+
+  // Slice to top 30 most recent items to avoid DOM rendering lags at high EPS
+  const visibleAlerts = React.useMemo(() => alerts.slice(0, 30), [alerts])
 
   return (
     <div className="card flex flex-col h-full">
@@ -66,12 +67,12 @@ export default function LiveAlertFeed() {
         </span>
       </div>
       <div className="flex-1 overflow-y-auto px-1 divide-y divide-surface-high">
-        {alerts.length === 0 ? (
+        {visibleAlerts.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-outline mono-label">
             AWAITING FEED...
           </div>
         ) : (
-          alerts.map((ev) => <AlertRow key={ev.id} event={ev} />)
+          visibleAlerts.map((ev) => <AlertRow key={ev.id} event={ev} />)
         )}
       </div>
     </div>
