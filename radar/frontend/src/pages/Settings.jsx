@@ -206,65 +206,6 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Detection Thresholds */}
-        <div className="card p-5 space-y-4">
-          <div>
-            <h2 className="font-semibold text-on-surface">Detection Thresholds</h2>
-            <p className="text-on-surface-variant text-sm">Adjust sensitivity for automated threat detection.</p>
-          </div>
-          <ThresholdSlider
-            label="GENERAL SENSITIVITY"
-            value={settings.detection_thresholds.general_sensitivity}
-            onChange={v => set('detection_thresholds.general_sensitivity', v)}
-          />
-          <ThresholdSlider
-            label="ANOMALY DETECTION"
-            value={settings.detection_thresholds.anomaly_detection}
-            onChange={v => set('detection_thresholds.anomaly_detection', v)}
-          />
-          <ThresholdSlider
-            label="LATERAL MOVEMENT"
-            value={settings.detection_thresholds.lateral_movement}
-            onChange={v => set('detection_thresholds.lateral_movement', v)}
-          />
-        </div>
-
-        {/* IP Whitelist */}
-        <div className="card p-5 space-y-4">
-          <div>
-            <h2 className="font-semibold text-on-surface">IP Whitelist</h2>
-            <p className="text-on-surface-variant text-sm">Requests from these addresses will not trigger alerts.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {(settings.ip_whitelist || []).map(ip => (
-              <span
-                key={ip}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-outline/30 bg-surface-high mono-data text-xs text-on-surface"
-              >
-                {ip}
-                <button
-                  onClick={() => removeIp(ip)}
-                  className="text-outline hover:text-critical transition-colors ml-0.5"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Enter IP address (e.g. 192.168.1.1)"
-              value={newIp}
-              onChange={e => setNewIp(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addIp()}
-              className="flex-1 bg-surface-lowest border border-outline/30 rounded px-3 py-2 mono-data text-sm text-on-surface placeholder-outline focus:outline-none focus:border-primary/50"
-              id="ip-whitelist-input"
-            />
-            <button onClick={addIp} className="btn-primary text-xs" id="add-ip-btn">+ ADD IP</button>
-          </div>
-        </div>
-
         {/* Input Mode */}
         <div className="card p-5 space-y-4">
           <div>
@@ -408,6 +349,65 @@ export default function Settings() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* IP Whitelist */}
+        <div className="card p-5 space-y-4">
+          <div>
+            <h2 className="font-semibold text-on-surface">IP Whitelist</h2>
+            <p className="text-on-surface-variant text-sm">Requests from these addresses will not trigger alerts.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(settings.ip_whitelist || []).map(ip => (
+              <span
+                key={ip}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-outline/30 bg-surface-high mono-data text-xs text-on-surface"
+              >
+                {ip}
+                <button
+                  onClick={() => removeIp(ip)}
+                  className="text-outline hover:text-critical transition-colors ml-0.5"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Enter IP address (e.g. 192.168.1.1)"
+              value={newIp}
+              onChange={e => setNewIp(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addIp()}
+              className="flex-1 bg-surface-lowest border border-outline/30 rounded px-3 py-2 mono-data text-sm text-on-surface placeholder-outline focus:outline-none focus:border-primary/50"
+              id="ip-whitelist-input"
+            />
+            <button onClick={addIp} className="btn-primary text-xs" id="add-ip-btn">+ ADD IP</button>
+          </div>
+        </div>
+
+        {/* Detection Thresholds */}
+        <div className="card p-5 space-y-4">
+          <div>
+            <h2 className="font-semibold text-on-surface">Detection Thresholds</h2>
+            <p className="text-on-surface-variant text-sm">Adjust sensitivity for automated threat detection.</p>
+          </div>
+          <ThresholdSlider
+            label="GENERAL SENSITIVITY"
+            value={settings.detection_thresholds.general_sensitivity}
+            onChange={v => set('detection_thresholds.general_sensitivity', v)}
+          />
+          <ThresholdSlider
+            label="ANOMALY DETECTION"
+            value={settings.detection_thresholds.anomaly_detection}
+            onChange={v => set('detection_thresholds.anomaly_detection', v)}
+          />
+          <ThresholdSlider
+            label="LATERAL MOVEMENT"
+            value={settings.detection_thresholds.lateral_movement}
+            onChange={v => set('detection_thresholds.lateral_movement', v)}
+          />
         </div>
 
         {/* AI Provider */}
