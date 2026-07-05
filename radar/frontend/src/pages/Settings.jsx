@@ -6,11 +6,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { api } from '../lib/api'
 import { useStore } from '../lib/store'
+import LiveAnalysisTerminal from '../components/dashboard/LiveAnalysisTerminal'
 
 const DEFAULT_SETTINGS = {
   detection_thresholds: { general_sensitivity: 74, anomaly_detection: 88, lateral_movement: 42 },
   ip_whitelist: [],
-  monitored_ips: ['192.168.1.100'],
+  monitored_ips: [],
   synthetic_delay: 3.0,
   ai_provider: 'gemini',
   monitoring_active: true,
@@ -350,6 +351,9 @@ export default function Settings() {
             </div>
           )}
         </div>
+
+        {/* Live Network Capture Terminal */}
+        <LiveAnalysisTerminal />
 
         {/* IP Whitelist */}
         <div className="card p-5 space-y-4">

@@ -45,21 +45,27 @@ async def update_settings(body: dict):
             if body["ai_provider"] in ("gemini", "claude", "mock"):
                 cfg.ai_provider = body["ai_provider"]
 
+        # Apply monitored_ips change
+        if "monitored_ips" in body and isinstance(body["monitored_ips"], list):
+            app_state.monitored_ips = body["monitored_ips"]
+
         # Apply input_mode change
         if "input_mode" in body:
             app_state.input_mode = body["input_mode"]
-            if app_state.input_mode == "synthetic":
-                app_state.feed_state = "SYNTHETIC_FEED"
-            else:
-                app_state.feed_state = "LIVE_FEED_ACTIVE"
+
+        # Apply feed_state based on mode & monitored_ips
+        if not app_state.monitoring_active:
+            app_state.feed_state = "SYSTEM_STANDBY"
+        elif app_state.input_mode == "synthetic":
+            app_state.feed_state = "SYNTHETIC_FEED"
+        elif app_state.input_mode == "target_ip":
+            app_state.feed_state = "LIVE_FEED_ACTIVE"
+        elif app_state.input_mode == "upload":
+            app_state.feed_state = "LIVE_FEED_ACTIVE"
 
         # Apply synthetic_delay change
         if "synthetic_delay" in body:
             app_state.synthetic_delay = float(body["synthetic_delay"])
-
-        # Apply monitored_ips change
-        if "monitored_ips" in body and isinstance(body["monitored_ips"], list):
-            app_state.monitored_ips = body["monitored_ips"]
 
         # Broadcast updated status
         await manager.broadcast({
@@ -126,7 +132,7 @@ def _default_settings() -> dict:
             "lateral_movement": 42,
         },
         "ip_whitelist": [],
-        "monitored_ips": ["192.168.1.100"],
+        "monitored_ips": [],
         "synthetic_delay": 3.0,
         "input_mode": "synthetic",
         "ai_provider": "gemini",

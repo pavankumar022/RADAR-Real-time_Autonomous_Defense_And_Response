@@ -230,6 +230,16 @@ async def generate_events(
     """
     from backend.state import app_state
     while True:
+        if not app_state.monitoring_active:
+            await asyncio.sleep(1.0)
+            continue
+
+        # Synthetic background events MUST ONLY be generated in 'synthetic' mode.
+        # Target IP, Upload, and Stream modes listen exclusively for real incoming telemetry.
+        if app_state.input_mode != "synthetic":
+            await asyncio.sleep(1.0)
+            continue
+
         event = _make_event()
         event = await _enrich_event(event)
 

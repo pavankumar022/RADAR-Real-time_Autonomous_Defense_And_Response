@@ -286,8 +286,19 @@ async def get_settings() -> dict:
         result = await row.fetchone()
         if result:
             val = json.loads(result["value"])
+            # Remove legacy pre-filled default IPs
+            legacy_monitored = {"10.0.1.55", "10.0.4.112", "192.168.1.100"}
+            legacy_whitelist = {"192.168.1.1", "10.0.0.55", "172.16.254.1"}
+
             if "monitored_ips" not in val:
-                val["monitored_ips"] = ["10.0.1.55", "10.0.4.112", "192.168.1.100"]
+                val["monitored_ips"] = []
+            else:
+                val["monitored_ips"] = [ip for ip in val.get("monitored_ips", []) if ip not in legacy_monitored]
+
+            if "ip_whitelist" not in val:
+                val["ip_whitelist"] = []
+            else:
+                val["ip_whitelist"] = [ip for ip in val.get("ip_whitelist", []) if ip not in legacy_whitelist]
             if "synthetic_delay" not in val:
                 val["synthetic_delay"] = 3.0
             return val

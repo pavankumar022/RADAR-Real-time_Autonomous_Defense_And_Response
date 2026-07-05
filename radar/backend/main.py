@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
 from backend import database as db
 from backend.state import app_state
-from backend.routers import alerts, logs, playbook, settings as settings_router, replay, status
+from backend.routers import alerts, logs, playbook, settings as settings_router, replay, status, live
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -48,6 +48,11 @@ app.include_router(playbook.router)
 app.include_router(settings_router.router)
 app.include_router(replay.router)
 app.include_router(status.router)
+app.include_router(live.router)
+
+# Direct root endpoint alias for custom ingestion scripts
+from backend.routers.live import ingest_live_alert
+app.post("/ingest")(ingest_live_alert)
 
 
 # ─── Startup ──────────────────────────────────────────────────────────────────
@@ -78,6 +83,14 @@ async def on_startup():
     app_state.feed_state = "LOADING_SYNTHETIC"
     app_state.generator_task = asyncio.create_task(start_event_generator())
 
+    # Auto-start live network packet capture process
+    try:
+        from backend.routers.live import start_live_capture
+        await start_live_capture()
+        log.info("Live network packet capture process started automatically")
+    except Exception as e:
+        log.warning(f"Auto-starting live capture failed: {e}")
+
     log.info(f"RADAR backend ready — docs at http://localhost:{settings.backend_port}/api/docs")
 
 
@@ -86,6 +99,13 @@ async def on_shutdown():
     log.info("RADAR backend shutting down...")
     if app_state.generator_task and not app_state.generator_task.done():
         app_state.generator_task.cancel()
+
+    try:
+        from backend.routers.live import stop_live_capture
+        await stop_live_capture()
+    except Exception:
+        pass
+
     from backend.services.replay_engine import replay_engine
     await replay_engine.stop()
 
@@ -102,21 +122,24 @@ async def start_event_generator():
     from backend.routers.alerts import broadcast_event
 
     log.info("Synthetic event generator starting...")
-    app_state.feed_state = "SYNTHETIC_FEED" if app_state.input_mode == "synthetic" else "LIVE_FEED_ACTIVE"
+    if app_state.input_mode == "synthetic":
+        app_state.feed_state = "SYNTHETIC_FEED"
+    else:
+        app_state.feed_state = "LIVE_FEED_ACTIVE" if app_state.monitoring_active else "SYSTEM_STANDBY"
 
     try:
         async for event in generate_events():
             if not app_state.monitoring_active:
-                # Monitoring paused — wait until re-enabled
                 app_state.feed_state = "SYSTEM_STANDBY"
                 while not app_state.monitoring_active:
                     await asyncio.sleep(1.0)
                 app_state.feed_state = "SYNTHETIC_FEED" if app_state.input_mode == "synthetic" else "LIVE_FEED_ACTIVE"
 
-            if app_state.input_mode not in ("synthetic", "target_ip"):
-                # Non-generating mode — pause generation but keep loop alive
-                await asyncio.sleep(2.0)
+            if app_state.input_mode != "synthetic":
+                await asyncio.sleep(1.0)
                 continue
+
+            app_state.feed_state = "SYNTHETIC_FEED"
 
             await broadcast_event(event)
 

@@ -32,6 +32,11 @@ const AlertRow = React.memo(({ event }) => {
             <span className="font-mono font-bold text-xs text-on-surface tracking-wide">
               {event.event_type}
             </span>
+            {(event.source === 'live_capture' || event.raw_payload?.sniffer) && (
+              <span className="mono-data text-[9px] px-1.5 py-0.5 bg-critical/20 text-critical border border-critical/40 rounded font-bold animate-pulse">
+                ⚡ LIVE CAPTURE
+              </span>
+            )}
           </div>
           <p className="mono-data text-primary truncate">
             Src: {event.source_ip}

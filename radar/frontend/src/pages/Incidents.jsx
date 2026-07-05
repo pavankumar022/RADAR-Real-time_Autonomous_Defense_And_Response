@@ -16,14 +16,15 @@ function formatTime(ts) {
 // ─── Incident List (sidebar) ──────────────────────────────────────────────────
 function IncidentList({ onSelect, selectedId, active, onClearAll }) {
   const { state } = useStore()
-  const critical = state.alerts.filter(a => a.severity === 'critical').slice(0, 30)
+  const incidents = state.alerts.filter(a => a.severity === 'critical' || a.severity === 'warning')
+  const displayedAlerts = incidents.length > 0 ? incidents.slice(0, 50) : state.alerts.slice(0, 50)
 
   return (
     <div className={`w-full md:w-72 shrink-0 flex flex-col h-full border-r border-primary/10 ${active ? 'hidden md:flex' : 'flex'}`}>
       <div className="card-header shrink-0 flex justify-between items-center w-full">
         <div>
           <h2 className="font-semibold text-sm text-on-surface">Incidents</h2>
-          <span className="mono-label text-critical">{critical.length} CRITICAL</span>
+          <span className="mono-label text-critical">{displayedAlerts.length} ACTIVE</span>
         </div>
         <button
           onClick={onClearAll}
@@ -34,10 +35,10 @@ function IncidentList({ onSelect, selectedId, active, onClearAll }) {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto divide-y divide-surface-high">
-        {critical.length === 0 ? (
+        {displayedAlerts.length === 0 ? (
           <EmptyState icon="🔒" message="NO INCIDENTS" />
         ) : (
-          critical.map(ev => (
+          displayedAlerts.map(ev => (
             <div
               key={ev.id}
               onClick={() => onSelect(ev)}
@@ -212,11 +213,26 @@ function PlaybookDetail({ alert, playbook, loading, onGenerate, onBack, active }
 export default function Incidents() {
   const { alertId } = useParams()
   const navigate = useNavigate()
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
 
   const [selectedAlert, setSelectedAlert] = useState(null)
   const [playbook, setPlaybook] = useState(null)
   const [loadingPlaybook, setLoadingPlaybook] = useState(false)
+
+  // Ensure latest alerts are loaded if state.alerts is empty
+  useEffect(() => {
+    if (state.alerts.length === 0) {
+      api.alerts.latest(50)
+        .then(data => {
+          if (data?.events && Array.isArray(data.events)) {
+            [...data.events].reverse().forEach(ev => {
+              dispatch({ type: 'NEW_ALERT', payload: { event: ev } })
+            })
+          }
+        })
+        .catch(() => {})
+    }
+  }, [state.alerts.length, dispatch])
 
   // If alertId in URL, auto-select that alert
   useEffect(() => {

@@ -203,10 +203,21 @@ export function StoreProvider({ children }) {
       .catch(() => {})
   }, [])
 
-  // Load initial stats
+  // Load initial stats & alerts
   useEffect(() => {
     api.alerts.stats()
       .then(data => dispatch({ type: 'STATS_UPDATE', payload: data }))
+      .catch(() => {})
+
+    api.alerts.latest(50)
+      .then(data => {
+        if (data?.events && Array.isArray(data.events)) {
+          // Dispatch events in chronological order (oldest first) so state.alerts has newest first
+          [...data.events].reverse().forEach(ev => {
+            dispatch({ type: 'NEW_ALERT', payload: { event: ev } })
+          })
+        }
+      })
       .catch(() => {})
   }, [])
 

@@ -88,6 +88,13 @@ export const api = {
     status: () => request('/replay/status'),
   },
 
+  // ─── Live Capture ────────────────────────────────────────────────────────────
+  live: {
+    start: () => request('/live/start', { method: 'POST' }),
+    stop: () => request('/live/stop', { method: 'POST' }),
+    status: () => request('/live/status'),
+  },
+
   // ─── MITRE ───────────────────────────────────────────────────────────────────
   mitre: () => request('/mitre'),
 }

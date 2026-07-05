@@ -32,17 +32,32 @@ def _normalize_uploaded_event(raw: dict) -> dict:
     """
     def pick(*keys, default="unknown"):
         for k in keys:
-            if raw.get(k):
+            if raw.get(k) is not None and str(raw[k]).strip() != "":
                 return str(raw[k])
         return default
 
     severity_map = {
-        "critical": "critical", "crit": "critical", "high": "critical",
-        "warning": "warning", "warn": "warning", "medium": "warning",
-        "info": "info", "low": "info", "informational": "info",
+        "critical": "critical", "crit": "critical", "high": "critical", "error": "critical",
+        "err": "critical", "fatal": "critical", "emerg": "critical", "alert": "critical", "panic": "critical",
+        "warning": "warning", "warn": "warning", "medium": "warning", "fail": "warning", "failed": "warning",
+        "info": "info", "low": "info", "informational": "info", "notice": "info",
     }
-    raw_severity = pick("severity", "level", "log_level", "priority", default="info").lower()
-    severity = severity_map.get(raw_severity, "info")
+    raw_severity = pick("severity", "level", "log_level", "priority", "status", default="").lower()
+    severity = severity_map.get(raw_severity)
+
+    description = pick("description", "message", "msg", "summary", "log", "detail", default="Uploaded security log event")
+    event_type = pick("event_type", "type", "action", "category", "signature", "event", "name", default="SECURITY_ALERT").upper()
+    if event_type == "UNKNOWN":
+        event_type = "SECURITY_ALERT"
+
+    if not severity:
+        combined_text = (description + " " + event_type + " " + str(raw)).lower()
+        if any(w in combined_text for w in ["critical", "high", "exploit", "c2", "malware", "unauthorized", "bypassed", "injection", "root", "admin", "backdoor", "breach", "brute"]):
+            severity = "critical"
+        elif any(w in combined_text for w in ["warn", "warning", "fail", "failed", "error", "deny", "denied", "reject", "attempt", "scan", "attack", "alert"]):
+            severity = "warning"
+        else:
+            severity = "critical"
 
     ts = pick("timestamp", "time", "@timestamp", "date", default="")
     try:
@@ -58,13 +73,7 @@ def _normalize_uploaded_event(raw: dict) -> dict:
 
     dst_ip = pick("destination_ip", "dst_ip", "dst", "target", "host", "target_ip", "destination")
     if dst_ip == "unknown" or not dst_ip:
-        dst_ip = "192.168.1.100"
-
-    event_type = pick("event_type", "type", "action", "category", "signature", "event").upper()
-    if event_type == "UNKNOWN":
-        event_type = "SECURITY_ALERT"
-
-    description = pick("description", "message", "msg", "summary", "log", default="Uploaded security log event")
+        dst_ip = app_state.monitored_ips[0] if app_state.monitored_ips else "10.0.0.1"
 
     return {
         "id": pick("id", "event_id", "uuid", default=str(uuid.uuid4())),
@@ -247,13 +256,21 @@ async def upload_logs(file: UploadFile = File(...)):
             import re
             ip_matches = re.findall(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b', line)
             src_ip = ip_matches[0] if len(ip_matches) > 0 else "185.22.45.10"
-            dst_ip = ip_matches[1] if len(ip_matches) > 1 else "192.168.1.100"
+            dst_ip = ip_matches[1] if len(ip_matches) > 1 else (app_state.monitored_ips[0] if app_state.monitored_ips else "10.0.0.1")
             
+            line_lower = line.lower()
+            if any(w in line_lower for w in ["crit", "error", "fail", "alert", "exploit", "unauthorized", "attack", "inject", "malware"]):
+                sev = "critical"
+            elif "warn" in line_lower:
+                sev = "warning"
+            else:
+                sev = "critical"
+
             raw_events.append({
                 "source_ip": src_ip,
                 "destination_ip": dst_ip,
-                "event_type": "LOG_ENTRY",
-                "severity": "warning" if "fail" in line.lower() or "error" in line.lower() else "info",
+                "event_type": "LOG_INCIDENT",
+                "severity": sev,
                 "description": line[:150],
                 "message": line,
             })
