@@ -114,7 +114,17 @@ async def _enrich_and_store(event: dict) -> None:
         event["country"] = geo.get("country")
         event["city"] = geo.get("city")
 
-    # If coordinates are missing, assign fallback geo location so attack arcs plot on the Globe
+    # Check country code in payload if lat/lon missing
+    if not event.get("lat") or not event.get("lon"):
+        country_code = str(event.get("geolocation") or event.get("country") or "").upper().strip()
+        if country_code in geolocation.COUNTRY_COORDINATES:
+            geo_info = geolocation.COUNTRY_COORDINATES[country_code]
+            event["lat"] = geo_info["lat"]
+            event["lon"] = geo_info["lon"]
+            event["country"] = geo_info["country"]
+            event["city"] = geo_info["city"]
+
+    # Final fallback if still missing
     if not event.get("lat") or not event.get("lon"):
         import random
         fallback = random.choice(FALLBACK_GEO_NODES)

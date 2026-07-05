@@ -192,6 +192,16 @@ async def ingest_live_alert(request: Request):
             event["country"] = geo.get("country")
             event["city"] = geo.get("city")
 
+        # Check country code in payload if lat/lon missing
+        if not event.get("lat") or not event.get("lon"):
+            country_code = str(payload.get("geolocation") or payload.get("country") or "").upper().strip()
+            if country_code in geolocation.COUNTRY_COORDINATES:
+                geo_info = geolocation.COUNTRY_COORDINATES[country_code]
+                event["lat"] = geo_info["lat"]
+                event["lon"] = geo_info["lon"]
+                event["country"] = geo_info["country"]
+                event["city"] = geo_info["city"]
+
         # If coordinates are missing, set fallback geo node for map rendering
         if not event.get("lat") or not event.get("lon"):
             import random

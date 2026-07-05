@@ -34,6 +34,30 @@ _DEMO_IP_FALLBACK: dict[str, dict] = {
 }
 
 
+# Curated exact coordinates for country codes (Capitals / Tech Hubs)
+COUNTRY_COORDINATES: dict[str, dict] = {
+    "RU": {"lat": 55.7558, "lon": 37.6173, "country": "Russia", "city": "Moscow"},
+    "RUSSIA": {"lat": 55.7558, "lon": 37.6173, "country": "Russia", "city": "Moscow"},
+    "IN": {"lat": 28.6139, "lon": 77.2090, "country": "India", "city": "New Delhi"},
+    "INDIA": {"lat": 28.6139, "lon": 77.2090, "country": "India", "city": "New Delhi"},
+    "CN": {"lat": 39.9042, "lon": 116.4074, "country": "China", "city": "Beijing"},
+    "CHINA": {"lat": 39.9042, "lon": 116.4074, "country": "China", "city": "Beijing"},
+    "US": {"lat": 38.9072, "lon": -77.0369, "country": "United States", "city": "Washington D.C."},
+    "USA": {"lat": 38.9072, "lon": -77.0369, "country": "United States", "city": "Washington D.C."},
+    "FR": {"lat": 48.8566, "lon": 2.3522, "country": "France", "city": "Paris"},
+    "DE": {"lat": 52.5200, "lon": 13.4050, "country": "Germany", "city": "Berlin"},
+    "GB": {"lat": 51.5074, "lon": -0.1278, "country": "United Kingdom", "city": "London"},
+    "UK": {"lat": 51.5074, "lon": -0.1278, "country": "United Kingdom", "city": "London"},
+    "JP": {"lat": 35.6762, "lon": 139.6503, "country": "Japan", "city": "Tokyo"},
+    "KR": {"lat": 37.5665, "lon": 126.9780, "country": "South Korea", "city": "Seoul"},
+    "BR": {"lat": -15.7975, "lon": -47.8919, "country": "Brazil", "city": "Brasília"},
+    "SG": {"lat": 1.3521, "lon": 103.8198, "country": "Singapore", "city": "Singapore"},
+    "UA": {"lat": 50.4501, "lon": 30.5234, "country": "Ukraine", "city": "Kyiv"},
+    "NL": {"lat": 52.3676, "lon": 4.9041, "country": "Netherlands", "city": "Amsterdam"},
+    "CA": {"lat": 45.4215, "lon": -75.6972, "country": "Canada", "city": "Ottawa"},
+    "AU": {"lat": -35.2809, "lon": 149.1300, "country": "Australia", "city": "Canberra"},
+}
+
 def _private_fallback(ip: str) -> Optional[dict]:
     """Return fallback geo for private/local IPs."""
     for prefix, geo in _PRIVATE_FALLBACK.items():
