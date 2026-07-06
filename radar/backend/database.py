@@ -58,6 +58,23 @@ CREATE TABLE IF NOT EXISTS playbooks (
 
 CREATE INDEX IF NOT EXISTS idx_playbooks_alert ON playbooks(alert_id);
 
+CREATE TABLE IF NOT EXISTS reports (
+    id              TEXT PRIMARY KEY,
+    alert_id        TEXT UNIQUE NOT NULL,
+    generated_at    TEXT NOT NULL,
+    provider        TEXT NOT NULL,
+    time_of_activity TEXT NOT NULL,
+    detected        TEXT NOT NULL,
+    affected_entities TEXT NOT NULL,
+    classification_reason TEXT NOT NULL,
+    escalation_reason TEXT NOT NULL,
+    remediation_actions TEXT NOT NULL,
+    attack_indicators TEXT NOT NULL,
+    raw_response    TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_reports_alert ON reports(alert_id);
+
 CREATE TABLE IF NOT EXISTS settings (
     key     TEXT PRIMARY KEY,
     value   TEXT NOT NULL
@@ -318,6 +335,43 @@ async def get_settings() -> dict:
     return SystemSettings().model_dump()
 
 
+async def save_report(report: dict) -> None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO reports (
+                id, alert_id, generated_at, provider,
+                time_of_activity, detected, affected_entities,
+                classification_reason, escalation_reason,
+                remediation_actions, attack_indicators, raw_response
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                report["id"],
+                report["alert_id"],
+                report["generated_at"],
+                report["provider"],
+                report["time_of_activity"],
+                report["detected"],
+                report["affected_entities"],
+                report["classification_reason"],
+                report["escalation_reason"],
+                report["remediation_actions"],
+                report["attack_indicators"],
+                report.get("raw_response", "")
+            )
+        )
+        await db.commit()
+
+
+async def get_report_by_alert(alert_id: str) -> Optional[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        row = await db.execute("SELECT * FROM reports WHERE alert_id=?", (alert_id,))
+        result = await row.fetchone()
+        return dict(result) if result else None
+
+
 async def save_settings(data: dict) -> None:
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
@@ -331,6 +385,7 @@ async def clear_all_events() -> None:
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM events")
         await db.execute("DELETE FROM playbooks")
+        await db.execute("DELETE FROM reports")
         await db.commit()
 
 
