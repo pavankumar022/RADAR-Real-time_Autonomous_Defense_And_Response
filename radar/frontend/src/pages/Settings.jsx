@@ -6,7 +6,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { api } from '../lib/api'
 import { useStore } from '../lib/store'
-import LiveAnalysisTerminal from '../components/dashboard/LiveAnalysisTerminal'
 
 const DEFAULT_SETTINGS = {
   detection_thresholds: { general_sensitivity: 74, anomaly_detection: 88, lateral_movement: 42 },
@@ -352,8 +351,7 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Live Network Capture Terminal */}
-        <LiveAnalysisTerminal />
+
 
         {/* IP Whitelist */}
         <div className="card p-5 space-y-4">
