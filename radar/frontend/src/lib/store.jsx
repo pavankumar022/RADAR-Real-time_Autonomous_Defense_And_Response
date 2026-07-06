@@ -95,8 +95,14 @@ function reducer(state, action) {
     }
 
     case 'NEW_ALERT': {
+      const newEvent = action.payload.event
+      if (!newEvent || !newEvent.id) return state
+      // Prevent duplicates (especially when re-fetching latest alerts on reconnect)
+      if (state.alerts.some(a => a.id === newEvent.id)) {
+        return state
+      }
       // Prepend new alert (newest first), cap at MAX_ALERTS
-      const alerts = [action.payload.event, ...state.alerts].slice(0, MAX_ALERTS)
+      const alerts = [newEvent, ...state.alerts].slice(0, MAX_ALERTS)
       return { ...state, alerts }
     }
 
@@ -194,6 +200,31 @@ export function StoreProvider({ children }) {
       dispatch({ type: 'STATS_UPDATE', payload: { events_per_sec: eps } })
     }, 1000)
     return () => clearInterval(epsTimerRef.current)
+  }, [])
+
+  // Handle fresh session vs reload/refresh
+  useEffect(() => {
+    const initialized = sessionStorage.getItem('radar_session_initialized')
+    if (!initialized) {
+      // 1. Mark session as initialized so refreshes won't reset settings
+      sessionStorage.setItem('radar_session_initialized', 'true')
+      sessionStorage.setItem('radar_input_mode', 'synthetic')
+
+      // 2. Fetch current settings, reset input_mode to synthetic and empty monitored_ips
+      api.settings.get()
+        .then(current => {
+          const resetSettings = {
+            ...current,
+            input_mode: 'synthetic',
+            monitored_ips: []
+          }
+          return api.settings.update(resetSettings)
+        })
+        .then(() => {
+          dispatch({ type: 'SET_INPUT_MODE', payload: 'synthetic' })
+        })
+        .catch(() => {})
+    }
   }, [])
 
   // Load MITRE coverage on mount
