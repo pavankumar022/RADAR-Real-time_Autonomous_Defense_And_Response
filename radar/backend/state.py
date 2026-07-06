@@ -19,6 +19,7 @@ class AppState:
     live_capture_task: Optional[asyncio.Task] = field(default=None, repr=False)
     synthetic_delay: float = 3.0
     monitored_ips: list[str] = field(default_factory=list)
+    ai_enabled: bool = False
 
 
 app_state = AppState()

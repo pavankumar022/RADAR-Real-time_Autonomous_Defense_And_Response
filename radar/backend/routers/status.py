@@ -39,6 +39,7 @@ async def get_status():
         "uptime_seconds": time.monotonic() - app_state.start_time,
         "ws_clients": manager.count,
         "replay_active": replay_engine.is_active,
+        "ai_enabled": app_state.ai_enabled,
         "version": "1.0.0",
     }
 

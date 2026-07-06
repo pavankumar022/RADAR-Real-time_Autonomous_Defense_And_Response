@@ -45,9 +45,10 @@ Be specific, technical, and actionable. Reference the actual IP addresses and te
 
 # ─── Gemini Provider ──────────────────────────────────────────────────────────
 
-async def _generate_gemini(prompt: str) -> dict:
+async def _generate_gemini(prompt: str, api_key: Optional[str] = None) -> dict:
     import google.generativeai as genai
-    genai.configure(api_key=settings.gemini_api_key)
+    key = api_key or settings.gemini_api_key
+    genai.configure(api_key=key)
     model = genai.GenerativeModel(
         model_name="gemini-2.0-flash-exp",
         generation_config={
@@ -68,9 +69,10 @@ async def _generate_gemini(prompt: str) -> dict:
 
 # ─── Claude Provider ──────────────────────────────────────────────────────────
 
-async def _generate_claude(prompt: str) -> tuple[dict, str]:
+async def _generate_claude(prompt: str, api_key: Optional[str] = None) -> tuple[dict, str]:
     import anthropic
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    key = api_key or settings.anthropic_api_key
+    client = anthropic.Anthropic(api_key=key)
     message = client.messages.create(
         model="claude-3-5-haiku-20241022",
         max_tokens=1024,
@@ -113,7 +115,7 @@ async def _generate_mock(event: dict) -> tuple[dict, str]:
 
 # ─── Public Interface ─────────────────────────────────────────────────────────
 
-async def generate_playbook(event: dict, provider: Optional[str] = None) -> dict:
+async def generate_playbook(event: dict, provider: Optional[str] = None, session_key: Optional[str] = None) -> dict:
     """
     Generate an AI IR playbook for a given security event.
     Provider priority: explicit arg → config default → fallback chain.
@@ -124,11 +126,11 @@ async def generate_playbook(event: dict, provider: Optional[str] = None) -> dict
     raw_text = ""
 
     try:
-        if resolved_provider == "gemini" and settings.has_gemini:
-            parsed, raw_text = await _generate_gemini(prompt)
+        if resolved_provider == "gemini" and (session_key or settings.has_gemini):
+            parsed, raw_text = await _generate_gemini(prompt, api_key=session_key)
             actual_provider = "gemini"
-        elif resolved_provider == "claude" and settings.has_anthropic:
-            parsed, raw_text = await _generate_claude(prompt)
+        elif resolved_provider == "claude" and (session_key or settings.has_anthropic):
+            parsed, raw_text = await _generate_claude(prompt, api_key=session_key)
             actual_provider = "claude"
         else:
             parsed, raw_text = await _generate_mock(event)

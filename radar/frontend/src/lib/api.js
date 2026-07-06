@@ -77,10 +77,10 @@ export const api = {
 
   // ─── Playbooks ───────────────────────────────────────────────────────────────
   playbook: {
-    generate: (alertId, provider) =>
+    generate: (alertId, provider, key) =>
       request('/playbook/generate', {
         method: 'POST',
-        body: JSON.stringify({ alert_id: alertId, provider }),
+        body: JSON.stringify({ alert_id: alertId, provider, key }),
       }),
     get: (alertId) => request(`/playbook/${alertId}`),
   },

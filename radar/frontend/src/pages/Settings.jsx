@@ -61,6 +61,19 @@ export default function Settings() {
   const clearModeError = (modeId) =>
     setModeErrors(prev => ({ ...prev, [modeId]: null }))
 
+  const [sessionKey, setSessionKey] = useState(() => sessionStorage.getItem('radar_session_ai_key') || '')
+  const [showKey, setShowKey] = useState(false)
+  const [sessionSaved, setSessionSaved] = useState(false)
+
+  const handleSaveSessionKey = () => {
+    sessionStorage.setItem('radar_session_ai_key', sessionKey)
+    sessionStorage.setItem('radar_session_ai_provider', settings.ai_provider)
+    setSessionSaved(true)
+    setTimeout(() => setSessionSaved(false), 2000)
+    // Notify store immediately
+    api.status().then(data => dispatch({ type: 'STATUS_UPDATE', payload: data })).catch(() => {})
+  }
+
   // Hidden file input ref — clicking the File Upload card triggers this
   const fileInputRef = useRef(null)
 
@@ -433,6 +446,39 @@ export default function Settings() {
                 {provider === 'gemini' ? 'Gemini 2.0 Flash' : 'Claude'}
               </button>
             ))}
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-outline/10">
+            <p className="mono-label text-on-surface-variant text-xs">Provider API Key</p>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type={showKey ? 'text' : 'password'}
+                  placeholder={`Enter ${settings.ai_provider === 'gemini' ? 'Gemini' : 'Claude'} API Key`}
+                  value={sessionKey}
+                  onChange={e => setSessionKey(e.target.value)}
+                  className="w-full bg-surface-lowest border border-outline/30 rounded px-3 py-2 mono-data text-sm text-on-surface placeholder-outline pr-12 focus:outline-none focus:border-primary/50"
+                  id="api-key-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-3 top-2.5 text-[10px] text-primary font-bold hover:text-primary-hover focus:outline-none"
+                >
+                  {showKey ? 'HIDE' : 'SHOW'}
+                </button>
+              </div>
+              <button
+                onClick={handleSaveSessionKey}
+                className="btn-primary text-xs px-4 shrink-0"
+                id="save-key-btn"
+              >
+                {sessionSaved ? '✓ SAVED' : 'SAVE KEY'}
+              </button>
+            </div>
+            <p className="text-[11px] text-on-surface-variant">
+              Your key is used only in this browser session and is never stored or saved.
+            </p>
           </div>
         </div>
 

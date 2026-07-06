@@ -73,11 +73,13 @@ async def on_startup():
         app_state.synthetic_delay = float(current_settings.get("synthetic_delay", 3.0))
         app_state.input_mode = current_settings.get("input_mode", "synthetic")
         app_state.monitoring_active = bool(current_settings.get("monitoring_active", True))
+        app_state.ai_enabled = bool(settings.gemini_api_key or settings.anthropic_api_key)
     except Exception as e:
         log.warning(f"Failed to load settings on startup: {e}")
         app_state.synthetic_delay = 3.0
         app_state.input_mode = "synthetic"
         app_state.monitoring_active = True
+        app_state.ai_enabled = bool(settings.gemini_api_key or settings.anthropic_api_key)
 
     # Start synthetic event generator
     app_state.feed_state = "LOADING_SYNTHETIC"

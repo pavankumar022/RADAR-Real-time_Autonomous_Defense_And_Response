@@ -37,7 +37,27 @@ async def generate_playbook(request: dict, background_tasks: BackgroundTasks):
 
     # Generate playbook
     provider = request.get("provider")
-    playbook = await playbook_gen.generate_playbook(event, provider=provider)
+    session_key = request.get("key")
+
+    # Check key presence
+    from backend.config import settings as cfg
+    has_key = False
+    resolved_provider = provider or cfg.effective_ai_provider
+    if session_key and session_key.strip():
+        has_key = True
+    else:
+        if resolved_provider == "gemini" and cfg.has_gemini:
+            has_key = True
+        elif resolved_provider == "claude" and cfg.has_anthropic:
+            has_key = True
+
+    if not has_key:
+        raise HTTPException(
+            status_code=400,
+            detail="Add your Gemini or Claude API key in Settings to enable AI-generated playbooks"
+        )
+
+    playbook = await playbook_gen.generate_playbook(event, provider=resolved_provider, session_key=session_key)
 
     # Persist
     await db.save_playbook(playbook)

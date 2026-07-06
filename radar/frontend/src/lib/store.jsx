@@ -28,6 +28,7 @@ const initialState = {
   inputMode: _sessionMode,
   uptimeSeconds: 0,
   wsClients: 0,
+  aiEnabled: false,
 
   // File upload info — persists for the session
   uploadFile: _sessionFile,  // { name: string, count: number } | null
@@ -74,6 +75,7 @@ function reducer(state, action) {
         inputMode: nextMode,
         uptimeSeconds: action.payload.uptime_seconds ?? state.uptimeSeconds,
         wsClients: action.payload.ws_clients ?? state.wsClients,
+        aiEnabled: action.payload.ai_enabled ?? state.aiEnabled,
       }
     }
 
@@ -227,10 +229,14 @@ export function StoreProvider({ children }) {
     }
   }, [])
 
-  // Load MITRE coverage on mount
+  // Load MITRE coverage and status on mount
   useEffect(() => {
     api.mitre()
       .then(data => dispatch({ type: 'SET_MITRE', payload: data.tactics || {} }))
+      .catch(() => {})
+
+    api.status()
+      .then(data => dispatch({ type: 'STATUS_UPDATE', payload: data }))
       .catch(() => {})
   }, [])
 
