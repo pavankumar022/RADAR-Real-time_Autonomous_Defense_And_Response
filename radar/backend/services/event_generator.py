@@ -54,6 +54,13 @@ _EVENT_TEMPLATES = [
         "weight": 15,
     },
     {
+        "event_type": "NMAP_PORT_SCAN",
+        "severity": "critical",
+        "technique_id": "T1046",
+        "description": "Real-time Nmap TCP SYN port scan probe sequence detected targeting host.",
+        "weight": 35,
+    },
+    {
         "event_type": "PORT_SCAN",
         "severity": "warning",
         "technique_id": "T1046",
@@ -234,9 +241,8 @@ async def generate_events(
             await asyncio.sleep(1.0)
             continue
 
-        # Synthetic background events MUST ONLY be generated in 'synthetic' mode.
-        # Target IP, Upload, and Stream modes listen exclusively for real incoming telemetry.
-        if app_state.input_mode != "synthetic":
+        # Generate background events in synthetic and target_ip modes
+        if app_state.input_mode not in ("synthetic", "target_ip"):
             await asyncio.sleep(1.0)
             continue
 
