@@ -1,3 +1,10 @@
+  ██████╗  █████╗ ██████╗  █████╗ ██████╗ 
+  ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗
+  ██████╔╝███████║██║  ██║███████║██████╔╝
+  ██╔══██╗██╔══██║██║  ██║██╔══██║██╔══██╗
+  ██║  ██║██║  ██║██████╔╝██║  ██║██║  ██║
+  ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
+  Real-time Autonomous Defense And Response
 # RADAR — Real-time Autonomous Defense And Response
 
 RADAR is an autonomous security Operations Center (SOC) platform designed to detect, visualize, and remediate network cyber threats in real time. It establishes a complete red/blue security loop, linking raw network telemetry directly with interactive 3D visualizations and automated incident response tools.
