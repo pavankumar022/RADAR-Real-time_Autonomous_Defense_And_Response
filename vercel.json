@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "cd radar/frontend && npm install && npm run build",
+  "outputDirectory": "radar/frontend/dist",
   "framework": "vite",
   "rewrites": [
     {
