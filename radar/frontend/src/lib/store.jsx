@@ -203,23 +203,26 @@ export function StoreProvider({ children }) {
       .catch(() => {})
   }, [])
 
-  // Load initial stats & alerts
+  // Load/reload stats & alerts whenever WebSocket connects (including reconnects)
+  // This ensures the Vercel dashboard always shows Render's current alerts on connect
   useEffect(() => {
+    if (!connected) return
+
     api.alerts.stats()
       .then(data => dispatch({ type: 'STATS_UPDATE', payload: data }))
       .catch(() => {})
 
-    api.alerts.latest(50)
+    api.alerts.latest(100)
       .then(data => {
         if (data?.events && Array.isArray(data.events)) {
-          // Dispatch events in chronological order (oldest first) so state.alerts has newest first
+          // Dispatch events oldest-first so newest end up at the top
           [...data.events].reverse().forEach(ev => {
             dispatch({ type: 'NEW_ALERT', payload: { event: ev } })
           })
         }
       })
       .catch(() => {})
-  }, [])
+  }, [connected])
 
   return (
     <StoreContext.Provider value={{ state, dispatch }}>

@@ -1,13 +1,15 @@
 /**
  * useWebSocket — Native WebSocket hook for RADAR
- * 
+ *
  * Features:
  * - Auto-reconnect with exponential backoff (max 30s)
  * - Dynamic URL resolution (checks localStorage / VITE_WS_URL / Vercel-Render production fallback)
  * - Heartbeat ping/pong keepalive
+ * - Keep-alive HTTP ping to Render backend every 10 min (prevents free tier sleep)
  * - Zero dependencies beyond React
  */
 import { useEffect, useRef, useCallback, useState } from 'react'
+import { getApiBase } from '../lib/api'
 
 export function getWsUrl() {
   const custom = typeof localStorage !== 'undefined' ? localStorage.getItem('radar_api_url') : null
@@ -27,14 +29,16 @@ export function getWsUrl() {
   return protocol + window.location.host + '/ws/alerts'
 }
 
-const PING_INTERVAL_MS = 25000
-const RECONNECT_BASE_MS = 1000
-const RECONNECT_MAX_MS = 30000
+const PING_INTERVAL_MS = 20000      // WebSocket ping every 20s
+const RECONNECT_BASE_MS = 1500
+const RECONNECT_MAX_MS = 15000      // Faster max reconnect (15s instead of 30s)
+const KEEPALIVE_INTERVAL_MS = 540000 // HTTP keep-alive ping every 9 minutes (prevent Render sleep)
 
 export function useWebSocket(onMessage) {
   const wsRef = useRef(null)
   const pingTimerRef = useRef(null)
   const reconnectTimerRef = useRef(null)
+  const keepAliveTimerRef = useRef(null)
   const reconnectAttemptsRef = useRef(0)
   const onMessageRef = useRef(onMessage)
   onMessageRef.current = onMessage
@@ -44,6 +48,20 @@ export function useWebSocket(onMessage) {
   const clearTimers = useCallback(() => {
     if (pingTimerRef.current) clearInterval(pingTimerRef.current)
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+  }, [])
+
+  // Keep-alive: ping Render /health endpoint every 9 min so it never sleeps
+  useEffect(() => {
+    const pingBackend = () => {
+      try {
+        const base = getApiBase().replace('/api', '')
+        fetch(`${base}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {})
+      } catch { /* silent */ }
+    }
+    // Ping once immediately on mount
+    pingBackend()
+    keepAliveTimerRef.current = setInterval(pingBackend, KEEPALIVE_INTERVAL_MS)
+    return () => clearInterval(keepAliveTimerRef.current)
   }, [])
 
   const connect = useCallback(() => {

@@ -29,29 +29,62 @@ def get_local_ip():
         return "127.0.0.1"
 
 
+RENDER_URL = "https://radar-backend-lmzh.onrender.com"
+LOCAL_URL  = "http://localhost:8080"
+
+
+def detect_radar_url():
+    """Auto-detect: use local backend if it responds, else use Render."""
+    try:
+        req = urllib.request.Request(LOCAL_URL + "/health", method="GET")
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            if resp.status == 200:
+                return LOCAL_URL
+    except Exception:
+        pass
+    return RENDER_URL
+
+
 def main():
     parser = argparse.ArgumentParser(description="RADAR Real-time Port Scan & Nmap Sniffer")
-    parser.add_argument("--radar-url", default="https://radar-backend-lmzh.onrender.com", help="RADAR backend base URL")
+    parser.add_argument(
+        "--radar-url", default="",
+        help="RADAR backend URL. Leave empty to auto-detect (local → Render)."
+    )
+    parser.add_argument(
+        "--both", action="store_true",
+        help="Send alerts to BOTH local and Render backends simultaneously."
+    )
     parser.add_argument("--ip", default="", help="Target IP to monitor (default: auto-detect local IP)")
     args = parser.parse_args()
 
-    ingest_url = args.radar_url.rstrip("/") + "/api/live/ingest"
+    if args.both:
+        ingest_urls = [LOCAL_URL + "/api/live/ingest", RENDER_URL + "/api/live/ingest"]
+        print(" ⚡ Sending to BOTH local and Render backends")
+    elif args.radar_url:
+        ingest_urls = [args.radar_url.rstrip("/") + "/api/live/ingest"]
+    else:
+        detected = detect_radar_url()
+        ingest_urls = [detected + "/api/live/ingest"]
+        label = "local backend" if "localhost" in detected else "Render (cloud — Vercel will see alerts)"
+        print(f" 🔍 Auto-detected backend: {label}")
 
     target_ip = args.ip or get_local_ip()
 
     print("==========================================================")
     print(" RADAR Live Target IP Sniffer")
     print(f" Monitoring IP   : {target_ip}")
-    print(f" Backend API     : {ingest_url}")
+    for u in ingest_urls:
+        print(f" Sending to      : {u}")
     print(" Capturing Nmap, SYN scans, brute-force probes...")
-    print("==========================================================")
+    print("==========================================================\n")
 
     # Rate limiting: avoid flooding the backend
     scan_history = {}      # src_ip -> list of probe timestamps
     last_alert_time = {}   # (src_ip, event_type) -> timestamp
 
     def send_alert(src_ip, dst_port, event_type, technique, description, severity="critical"):
-        """POST a single normalized alert to the RADAR backend."""
+        """POST a single normalized alert to all configured RADAR backends."""
         key = (src_ip, event_type)
         now = time.time()
         # Rate limit: max 1 alert per src+event_type per 1.5 seconds
@@ -71,17 +104,18 @@ def main():
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "source": "live_capture",
         }
-        try:
-            req = urllib.request.Request(
-                ingest_url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=4) as resp:
-                print(f"  ✓ ALERT SENT  → [{event_type}] from {src_ip} → {target_ip}:{dst_port}")
-        except Exception as e:
-            print(f"  ✗ ALERT FAIL  → {event_type} from {src_ip} ({e})")
+        for url in ingest_urls:
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=4) as resp:
+                    print(f"  ✓ ALERT → [{event_type}] {src_ip}→{target_ip}:{dst_port} ({url.split('/')[2]})")
+            except Exception as e:
+                print(f"  ✗ FAIL  → {event_type} @ {url.split('/')[2]} ({e})")
 
     def classify_port(port):
         """Return (event_type, technique_id, severity) based on destination port."""
