@@ -120,6 +120,12 @@ export const api = {
     status: () => request('/live/status'),
   },
 
+  // ─── Simulation ──────────────────────────────────────────────────────────────
+  simulate: {
+    nmap: (ip) => request('/live/simulate-nmap', { method: 'POST', body: JSON.stringify({ ip }) }),
+    sshBrute: (ip) => request('/live/simulate-ssh-brute', { method: 'POST', body: JSON.stringify({ ip }) }),
+  },
+
   // ─── MITRE ───────────────────────────────────────────────────────────────────
   mitre: () => request('/mitre'),
 }

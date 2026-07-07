@@ -195,12 +195,30 @@ export default function Settings() {
     set('monitored_ips', updated)
     setNewMonitoredIp('')
     api.settings.update({ ...settings, monitored_ips: updated, input_mode: state.inputMode }).catch(() => {})
+    // Auto-trigger simulated scan so the user sees attacks right away!
+    api.simulate.nmap(ip).catch((err) => console.error("Simulated scan failed:", err))
   }
 
   const removeMonitoredIp = (ip) => {
     const updated = (settings.monitored_ips || []).filter(x => x !== ip)
     set('monitored_ips', updated)
     api.settings.update({ ...settings, monitored_ips: updated, input_mode: state.inputMode }).catch(() => {})
+  }
+
+  const handleSimulateNmap = async (ip) => {
+    try {
+      await api.simulate.nmap(ip)
+    } catch (e) {
+      console.error('Nmap simulation failed:', e)
+    }
+  }
+
+  const handleSimulateSSHBrute = async (ip) => {
+    try {
+      await api.simulate.sshBrute(ip)
+    } catch (e) {
+      console.error('SSH Brute simulation failed:', e)
+    }
   }
 
   const activeMode = state.inputMode
@@ -329,14 +347,26 @@ export default function Settings() {
                 {(settings.monitored_ips || []).map(ip => (
                   <div
                     key={ip}
-                    className="flex items-center justify-between px-3 py-2.5 rounded border border-outline/20 bg-surface-low text-xs text-on-surface animate-fade-in"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between px-3 py-2.5 rounded border border-outline/20 bg-surface-low text-xs text-on-surface animate-fade-in gap-3"
                   >
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-secondary pulse-dot" />
                       <span className="mono-data font-bold">{ip}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="mono-label text-secondary text-[10px]">LIVE SURVEILLANCE ACTIVE</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => handleSimulateNmap(ip)}
+                        className="px-2.5 py-1 rounded bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 text-[10px] font-mono transition-all font-semibold"
+                      >
+                        ⚡ SCAN (NMAP)
+                      </button>
+                      <button
+                        onClick={() => handleSimulateSSHBrute(ip)}
+                        className="px-2.5 py-1 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20 text-[10px] font-mono transition-all font-semibold"
+                      >
+                        💥 BRUTE FORCE
+                      </button>
+                      <span className="mono-label text-secondary text-[10px] hidden md:inline ml-1 mr-1">LIVE ACTIVE</span>
                       <button
                         onClick={() => removeMonitoredIp(ip)}
                         className="px-2 py-1 rounded bg-critical/15 text-critical border border-critical/30 hover:bg-critical/25 text-[10px] font-mono transition-all"

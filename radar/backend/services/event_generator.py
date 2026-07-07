@@ -243,6 +243,12 @@ async def generate_events(
 
         # Synthetic background events MUST ONLY be generated in 'synthetic' mode.
         # Target IP, Upload, and Stream modes listen exclusively for real incoming telemetry.
+        # But we'll allow generating simulated alerts for active target IP if they are added
+        # and we want background threats to targets. Wait, the user request says:
+        # "i dont want that separate running nmap and bruete , i will add after runing brower i will add ip there which shoyld be monitored , when sttacks comes it should"
+        # Since they add monitored IP in browser, when they run simulation, the endpoints /api/live/simulate-* will post alerts targeting those IPs.
+        # So we don't need background synthetic events to run when in target_ip mode.
+        # Let's keep it strictly listening or simulated via the buttons.
         if app_state.input_mode != "synthetic":
             await asyncio.sleep(1.0)
             continue
