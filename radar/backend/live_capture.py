@@ -15,7 +15,7 @@ import urllib.request
 from datetime import datetime, timezone
 
 KAFKA_BOOTSTRAP = os.getenv('KAFKA_BOOTSTRAP', 'localhost:9092')
-RADAR_INGEST_URL = os.getenv('RADAR_INGEST_URL', 'http://127.0.0.1:8080/api/live/ingest')
+RADAR_INGEST_URL = os.getenv('RADAR_INGEST_URL', 'http://127.0.0.1:54321/api/live/ingest')
 PORTS_FILTER = 'port 22 or port 80 or port 443 or port 3389 or port 8080 or port 445'
 
 running = True

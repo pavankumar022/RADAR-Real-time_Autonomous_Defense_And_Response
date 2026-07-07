@@ -4,7 +4,7 @@ Performs real TCP port scan probes against the target IP and sends alerts to RAD
 
 Usage:
   # Send to local backend (when running project locally):
-  python run_nmap_scan.py --target 192.168.1.5 --radar-url http://localhost:8080
+  python run_nmap_scan.py --target 192.168.1.5 --radar-url http://localhost:54321
 
   # Send to deployed Render backend (to see on Vercel dashboard):
   python run_nmap_scan.py --target 192.168.1.5 --radar-url https://radar-backend-lmzh.onrender.com
@@ -20,7 +20,7 @@ import urllib.error
 import argparse
 
 RENDER_URL = "https://radar-backend-lmzh.onrender.com"
-LOCAL_URL  = "http://localhost:8080"
+LOCAL_URL  = "http://localhost:54321"
 
 
 def detect_radar_url():

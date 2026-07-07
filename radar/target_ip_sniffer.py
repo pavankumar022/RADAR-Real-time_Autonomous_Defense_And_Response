@@ -30,7 +30,7 @@ def get_local_ip():
 
 
 RENDER_URL = "https://radar-backend-lmzh.onrender.com"
-LOCAL_URL  = "http://localhost:8080"
+LOCAL_URL  = "http://localhost:54321"
 
 
 def detect_radar_url():

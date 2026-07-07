@@ -3,7 +3,7 @@ RADAR Attack Demonstration Tool — SSH Brute Force Attack Tool
 Performs rapid SSH authentication attempts against target IP to trigger MITRE T1110 alert.
 
 Usage:
-  python run_ssh_brute.py --target 192.168.1.5 [--radar-url http://localhost:8080]
+  python run_ssh_brute.py --target 192.168.1.5 [--radar-url http://localhost:54321]
 """
 import time
 import json
@@ -13,7 +13,7 @@ import argparse
 def main():
     parser = argparse.ArgumentParser(description="RADAR SSH Brute Force Attack Tester")
     parser.add_argument("--target", required=True, help="Target machine IP (e.g. 192.168.1.5)")
-    parser.add_argument("--radar-url", default="http://localhost:8080", help="RADAR backend base URL")
+    parser.add_argument("--radar-url", default="http://localhost:54321", help="RADAR backend base URL")
     args = parser.parse_args()
 
     target_ip = args.target
