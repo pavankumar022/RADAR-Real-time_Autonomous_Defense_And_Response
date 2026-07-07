@@ -139,7 +139,7 @@ class SystemSettings(BaseModel):
     detection_thresholds: DetectionThresholds = Field(default_factory=DetectionThresholds)
     ip_whitelist: List[str] = Field(default_factory=list)
     monitored_ips: List[str] = Field(default_factory=list)
-    synthetic_delay: float = Field(3.0, ge=0.5, le=10.0)
+    synthetic_delay: float = Field(2.0, ge=0.5, le=10.0)
     input_mode: InputMode = "synthetic"
     ai_provider: AIProvider = "gemini"
     monitoring_active: bool = True

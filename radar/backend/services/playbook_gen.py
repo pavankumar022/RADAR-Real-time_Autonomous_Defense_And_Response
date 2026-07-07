@@ -150,3 +150,68 @@ async def generate_playbook(event: dict, provider: Optional[str] = None) -> dict
         "remediation_commands": parsed.get("remediation_commands", ""),
         "raw_response": raw_text,
     }
+
+
+def _build_report_prompt(event: dict) -> str:
+    return f"""You are a senior SOC analyst. Generate a structured incident report for the following security event.
+
+EVENT DETAILS:
+- Event Type: {event.get("event_type", "UNKNOWN")}
+- Severity: {event.get("severity", "unknown").upper()}
+- Source IP: {event.get("source_ip", "unknown")}
+- Destination IP/Target: {event.get("destination_ip", "unknown")}
+- MITRE Technique: {event.get("technique_id", "unknown")} — {event.get("tactic", "unknown")}
+- Description: {event.get("description", "No description")}
+- Timestamp: {event.get("timestamp", "unknown")}
+
+Respond ONLY with valid JSON in this exact structure (no markdown, no extra text):
+{{
+  "time_of_activity": "The timestamp or duration of the activity",
+  "affected_entities": ["List of affected hosts, IPs, or systems"],
+  "severity": "Severity level (e.g. Critical, High, Medium, Low)",
+  "classification_reason": "Provide a detailed technical justification for classifying this alert as a True Positive (or False Positive if context suggests)",
+  "escalation_reason": "Provide the technical justification for escalating this alert (e.g. active C2, brute force success, privilege escalation)",
+  "remediation_actions": ["Action 1", "Action 2", "Action 3"],
+  "attack_indicators": ["Indicator 1 (e.g. connection to IP from unusual port)", "Indicator 2"]
+}}
+"""
+
+
+async def _generate_mock_report(event: dict) -> dict:
+    return {
+        "time_of_activity": event.get("timestamp", datetime.now(timezone.utc).isoformat()),
+        "affected_entities": [event.get("destination_ip", "10.0.0.1"), event.get("source_ip", "185.22.45.10")],
+        "severity": event.get("severity", "critical").capitalize(),
+        "classification_reason": f"Alert classified as True Positive due to anomalous {event.get('event_type')} signature matching technique {event.get('technique_id')} from source IP {event.get('source_ip')}.",
+        "escalation_reason": f"Active threat signature detected targeting production system {event.get('destination_ip')}.",
+        "remediation_actions": [
+            f"Isolate source IP {event.get('source_ip')} at perimeter firewall.",
+            f"Audit system access logs on {event.get('destination_ip')} for credential abuse.",
+            "Deploy security policy to prevent execution of unauthorized commands."
+        ],
+        "attack_indicators": [
+            f"Inbound traffic probe from {event.get('source_ip')} targeting port {event.get('destination_ip')}.",
+            f"Correlation to MITRE technique {event.get('technique_id')} — {event.get('tactic')}."
+        ]
+    }
+
+
+async def generate_report(event: dict, provider: Optional[str] = None) -> dict:
+    """Generate a structured security incident report using Gemini or fallback."""
+    resolved_provider = provider or settings.effective_ai_provider
+    prompt = _build_report_prompt(event)
+    raw_text = ""
+
+    try:
+        if resolved_provider == "gemini" and settings.has_gemini:
+            parsed, raw_text = await _generate_gemini(prompt)
+        elif resolved_provider == "claude" and settings.has_anthropic:
+            parsed, raw_text = await _generate_claude(prompt)
+        else:
+            parsed = await _generate_mock_report(event)
+    except Exception as e:
+        log.warning(f"AI report generation failed: {e}. Falling back to mock report.")
+        parsed = await _generate_mock_report(event)
+
+    return parsed
+

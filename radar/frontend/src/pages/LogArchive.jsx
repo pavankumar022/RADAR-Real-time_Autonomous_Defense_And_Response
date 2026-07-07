@@ -55,6 +55,8 @@ export default function LogArchive() {
 
   useEffect(() => {
     fetchLogs()
+    const interval = setInterval(fetchLogs, 2000)
+    return () => clearInterval(interval)
   }, [fetchLogs])
 
   const handleFilter = (key, value) => {

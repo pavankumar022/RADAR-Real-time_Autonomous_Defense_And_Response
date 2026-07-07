@@ -332,7 +332,7 @@ async def get_settings() -> dict:
             else:
                 val["ip_whitelist"] = [ip for ip in val.get("ip_whitelist", []) if ip not in legacy_whitelist]
             if "synthetic_delay" not in val:
-                val["synthetic_delay"] = 3.0
+                val["synthetic_delay"] = 2.0
             return val
     from backend.models import SystemSettings
     return SystemSettings().model_dump()

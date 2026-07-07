@@ -153,14 +153,14 @@ async def start_event_generator():
 # ─── Seed ─────────────────────────────────────────────────────────────────────
 
 async def _seed_if_empty():
-    """Seed the database with 5,000 synthetic events on first run."""
+    """Seed the database with 1 synthetic event on first run."""
     events, total = await db.get_events_paginated(page=1, page_size=1)
     if total == 0:
-        log.info("Database empty — seeding with 5,000 synthetic events...")
+        log.info("Database empty — seeding with 1 synthetic event...")
         from backend.services.event_generator import generate_seed_events
-        seed = await generate_seed_events(5000)
+        seed = await generate_seed_events(1)
         await db.insert_events_batch(seed)
-        log.info(f"Seeded {len(seed)} events")
+        log.info(f"Seeded {len(seed)} event")
     else:
         log.info(f"Database has {total} existing events — skipping seed")
 

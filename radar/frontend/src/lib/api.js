@@ -64,6 +64,11 @@ export const api = {
         body: JSON.stringify({ alert_id: alertId, provider }),
       }),
     get: (alertId) => request(`/playbook/${alertId}`),
+    generateReport: (alertId, provider) =>
+      request('/playbook/report', {
+        method: 'POST',
+        body: JSON.stringify({ alert_id: alertId, provider }),
+      }),
   },
 
   // ─── Settings ────────────────────────────────────────────────────────────────

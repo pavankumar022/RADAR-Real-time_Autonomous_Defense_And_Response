@@ -59,3 +59,23 @@ async def get_playbook(alert_id: str):
     if not playbook:
         raise HTTPException(404, "Playbook not generated for this alert")
     return playbook
+
+
+@router.post("/report")
+async def generate_incident_report(request: dict):
+    """
+    Generate a structured incident report for a single alert.
+    Body: {"alert_id": "<uuid>"}
+    """
+    alert_id = request.get("alert_id")
+    if not alert_id:
+        raise HTTPException(400, "alert_id is required")
+
+    event = await db.get_event_by_id(alert_id)
+    if not event:
+        raise HTTPException(404, f"Alert {alert_id} not found")
+
+    provider = request.get("provider")
+    report = await playbook_gen.generate_report(event, provider=provider)
+    return report
+
