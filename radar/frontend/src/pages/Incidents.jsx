@@ -126,7 +126,7 @@ function PlaybookDetail({
     writeField("Recommended Remediation Actions", report.remediation_actions?.join("\n") || "None");
     writeField("List of Attack Indicators", report.attack_indicators?.join("\n") || "None");
 
-    doc.save(`incident_report_${alert.id?.slice(0, 6)}.pdf`);
+    doc.save(`${alert.id}.pdf`);
   };
 
   if (!alert) {
@@ -202,12 +202,12 @@ function PlaybookDetail({
             <div>
               {report ? (
                 <div className="flex items-center gap-2">
-                  <span className="chip-secondary">
+                  <span className="chip-success">
                     📋 Report Generated
                   </span>
                   <button
                     onClick={handleDownloadPDF}
-                    className="p-1.5 bg-secondary/15 text-secondary border border-secondary/30 rounded hover:bg-secondary/25 transition-all text-xs font-mono font-bold flex items-center gap-1"
+                    className="p-1.5 bg-primary/10 text-primary border border-primary/20 rounded hover:bg-primary/20 transition-all text-xs font-mono font-bold flex items-center gap-1"
                     title="Download Report PDF"
                     id="download-report-pdf-btn"
                   >
@@ -221,7 +221,7 @@ function PlaybookDetail({
                 <button
                   onClick={onGenerateReport}
                   disabled={loadingReport}
-                  className="px-3 py-1.5 bg-secondary text-on-secondary rounded hover:bg-secondary/80 transition-all text-xs font-semibold flex items-center gap-1.5"
+                  className="btn-primary flex items-center gap-2 text-xs"
                   id="generate-report-btn"
                 >
                   {loadingReport ? (
@@ -301,12 +301,12 @@ function PlaybookDetail({
 
         {/* Incident Report Content */}
         {report && (
-          <div className="card p-4 md:p-5 mt-4 space-y-4 border border-secondary/20 bg-surface-lowest">
+          <div className="card p-4 md:p-5 mt-4 space-y-4 bg-surface-lowest">
             <div className="flex justify-between items-center border-b border-primary/10 pb-3">
-              <h3 className="mono-label text-secondary font-bold text-sm">Incident Report (Gemini AI)</h3>
+              <h3 className="mono-label text-primary font-bold text-sm">Incident Report (Gemini AI)</h3>
               <button
                 onClick={handleDownloadPDF}
-                className="px-2.5 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded hover:bg-secondary/20 transition-all text-xs font-mono font-bold flex items-center gap-1"
+                className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded hover:bg-primary/20 transition-all text-xs font-mono font-bold flex items-center gap-1"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
