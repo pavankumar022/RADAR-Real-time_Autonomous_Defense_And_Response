@@ -34,6 +34,12 @@ frontend/node_modules/
 frontend/.next/
 frontend/dist/
 
+# Backend compiled frontend (build artifact — run build_frontend.bat to regenerate)
+backend/dist/
+
+# Node
+node_modules/
+
 # IDE
 .vscode/
 .idea/
